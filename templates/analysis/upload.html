@@ -1,0 +1,174 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анализатор крови</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* Добавление отступов для улучшения визуала */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #d1f7d1;  /* Светло-зеленый фон */
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        /* Центрируем заголовок */
+        h2 {
+            text-align: center;
+            font-size: 36px;
+            color: #4CAF50;
+            margin-top: 50px;
+        }
+
+        /* Основной контейнер для формы */
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        /* Стили для формы */
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        input[type="file"] {
+            font-size: 16px;
+            padding: 12px;
+            margin: 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        /* Кнопка */
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Прогресс-бар */
+        #progress-container {
+            display: none;
+            margin-top: 20px;
+        }
+
+        progress {
+            width: 100%;
+        }
+
+        /* Отступы для страницы */
+        .container {
+            padding: 30px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+        }
+
+        /* Скрытие метки, если она не нужна */
+        .sr-only {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Анализатор крови</h2>
+
+    <!-- Форма для загрузки -->
+    <form id="uploadForm" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <!-- Скрытие метки "Выберите файл" -->
+        <label for="{{ form.image.id_for_label }}" class="sr-only">Выберите файл</label>
+        
+        <!-- Поле загрузки файла -->
+        {{ form.image }}  <!-- Это будет само поле загрузки изображения -->
+
+        <button type="submit">Загрузить</button>
+    </form>
+
+    <!-- Прогресс-бар -->
+    <div id="progress-container">
+        <progress id="progress-bar" value="0" max="100"></progress>
+        <span id="progress-percent">0%</span>
+    </div>
+
+    <!-- Сообщение об успехе -->
+    <div id="upload-message" style="display:none; margin-top: 20px;">
+        <p>Загрузка...</p>
+    </div>
+</div>
+
+<script>
+    // Когда форма отправляется
+    $('#uploadForm').on('submit', function(event) {
+        event.preventDefault();  // Останавливаем стандартную отправку формы
+
+        // Показываем прогресс-бар и сообщение о загрузке
+        $('#progress-container').show();
+        $('#upload-message').show();
+
+        // Создаем FormData, чтобы отправить форму асинхронно
+        var formData = new FormData(this);
+
+        $.ajax({
+            url: "{% url 'upload_image' %}",  // URL, по которому будет отправляться запрос
+            type: "POST",
+            data: formData,
+            contentType: false,
+            processData: false,
+            xhr: function() {
+                var xhr = new XMLHttpRequest();
+                // Обработчик для отслеживания прогресса загрузки
+                xhr.upload.onprogress = function(event) {
+                    if (event.lengthComputable) {
+                        var percent = (event.loaded / event.total) * 100;
+                        $('#progress-bar').val(percent);
+                        $('#progress-percent').text(Math.round(percent) + '%');
+                    }
+                };
+                return xhr;
+            },
+            success: function(response) {
+                // Обработка успешной загрузки
+                alert('Изображение успешно загружено.');
+                // Скрываем прогресс-бар и сообщение
+                $('#progress-container').hide();
+                $('#upload-message').hide();
+            },
+            error: function(xhr, status, error) {
+                // Обработка ошибки
+                alert('Произошла ошибка. Пожалуйста, попробуйте снова.');
+                // Скрываем прогресс-бар и сообщение
+                $('#progress-container').hide();
+                $('#upload-message').hide();
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
